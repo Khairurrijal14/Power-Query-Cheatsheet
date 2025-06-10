@@ -1,0 +1,6 @@
+(startDate as date, endDate as date) as number =>
+let
+    CountCalendarDays = Duration.Days(endDate - startDate) + 1
+in
+    CountCalendarDays
+//fungsi ini berguna untuk menghitung jumlah hari dari tanggal ke tanggal tertentu 
