@@ -1,0 +1,7 @@
+(startDate as date, endDate as date) as number =>
+let
+    ListDates = List.Dates(startDate, Duration.Days(endDate - startDate), #duration(1,0,0,0)),
+    Weekdays = List.Select(ListDates, each Date.DayOfWeek(_, Day.Monday) < 6),
+    CountWorkingDays = List.Count(Weekdays)
+in
+    CountWorkingDays
