@@ -5,3 +5,4 @@ let
     CountWorkingDays = List.Count(Weekdays)
 in
     CountWorkingDays
+// digunakan untuk menghitung hari kerja yang ditandakan pada kode " < 6 " yang artinya 6 hari kerja
