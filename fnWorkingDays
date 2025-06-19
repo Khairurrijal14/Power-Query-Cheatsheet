@@ -1,3 +1,4 @@
+// hitung hari exclude weekend saja
 (startDate as date, endDate as date) as number =>
 let
     ListDates = List.Dates(startDate, Duration.Days(endDate - startDate), #duration(1,0,0,0)),
@@ -6,3 +7,70 @@ let
 in
     CountWorkingDays
 // digunakan untuk menghitung hari kerja yang ditandakan pada kode " < 6 " yang artinya 6 hari kerja
+
+// hitung hari exclude weekend dan hari libur
+
+Bagus! Karena kamu sudah punya daftar hari libur di Excel dengan sheet bernama "Hari Libur", kita bisa ambil daftar tanggalnya dari sana dan sesuaikan fungsi fnHitungHariKerja untuk menggunakannya.
+
+✅ Langkah-Langkah Lengkap di Power Query:
+1. Import Sheet "Hari Libur"
+Di Excel > Data > Get & Transform (Power Query) > From Workbook (atau klik kanan sheet > Load to Power Query)
+
+Pastikan sheet "Hari Libur" punya kolom berisi tanggal, misalnya kolom bernama Tanggal.
+
+Setelah masuk ke Power Query, beri nama kueri ini: HariLibur
+
+2. Ubah kolom tanggal menjadi list
+Tambahkan langkah di kueri HariLibur untuk ubah jadi list:
+
+= Table.Column(#"Langkah_Sebelumnya", "Tanggal")
+Misal, ubah nama step tersebut menjadi: ListTanggalLibur
+
+3. Buat Fungsi fnHitungHariKerja
+Klik kanan di panel kiri > New Query > Blank Query
+Beri nama: fnHitungHariKerja
+
+Isi dengan kode berikut:
+
+(startDate as date, endDate as date) as number =>
+let
+    // Ambil list tanggal libur dari query HariLibur
+    holidayList = HariLibur,
+
+    // Buat daftar semua tanggal dari startDate ke endDate
+    ListDates = List.Dates(startDate, Duration.Days(endDate - startDate) + 1, #duration(1,0,0,0)),
+
+    // Ambil hanya hari kerja (Senin s.d. Jumat)
+    Weekdays = List.Select(ListDates, each Date.DayOfWeek(_, Day.Monday) < 5),
+
+    // Hilangkan tanggal yang termasuk dalam daftar hari libur nasional
+    WorkingDays = List.RemoveItems(Weekdays, holidayList),
+
+    // Hitung jumlah hari kerja yang tersisa
+    CountWorkingDays = List.Count(WorkingDays)
+in
+    CountWorkingDays
+Catatan: HariLibur di atas merujuk ke query sheet yang kamu ubah menjadi list (Table.Column(...)).
+
+4. Contoh Penggunaan
+Buat query baru lagi untuk mencoba fungsi:
+
+powerquery
+Copy
+Edit
+let
+    Start = #date(2025, 6, 1),
+    End = #date(2025, 6, 30),
+    HariKerja = fnHitungHariKerja(Start, End)
+in
+    HariKerja
+🧠 Tips:
+Pastikan kolom tanggal pada sheet "Hari Libur" benar-benar dalam format date.
+
+Jika ada baris kosong/null, kamu bisa tambahkan filter:
+
+powerquery
+Copy
+Edit
+Table.SelectRows(Source, each [Tanggal] <> null)
+Kalau kamu kirim isi atau struktur sheet "Hari Libur", saya bisa bantu sesuaikan kodenya lebih akurat. Mau dibantu juga sampai tahap klik2-nya di Power Query?
