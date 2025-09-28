@@ -1,0 +1,40 @@
+(startDate as date, endDate as date) as number =>
+let
+    // Ambil tahun awal & akhir dari parameter
+    StartYear = Date.Year(startDate),
+    EndYear   = Date.Year(endDate),
+
+    // Buat daftar tahun dari StartYear sampai EndYear
+    YearList = {StartYear..EndYear},
+
+    // Fungsi untuk ambil libur dari API Nager.Date untuk 1 tahun
+    GetHolidays = (y as number) =>
+        try 
+            Table.TransformColumns(
+                Table.FromRecords(
+                    Json.Document(Web.Contents("https://date.nager.at/api/v3/PublicHolidays/" & Text.From(y) & "/ID"))
+                ),
+                {{"date", each Date.FromText(_), type date}}
+            )
+        otherwise #table({"date"}, {}),
+
+    // Gabungkan semua libur untuk range tahun
+    HolidayTables = List.Transform(YearList, each GetHolidays(_)),
+    AllHolidays   = Table.Combine(HolidayTables),
+
+    // Ambil hanya kolom tanggal
+    Holidays = Table.Column(AllHolidays, "date"),
+
+    // Buat daftar semua tanggal dari startDate sampai endDate
+    ListDates = List.Dates(startDate, Duration.Days(endDate - startDate) + 1, #duration(1,0,0,0)),
+
+    // Filter Senin–Jumat
+    Weekdays = List.Select(ListDates, each Date.DayOfWeek(_, Day.Monday) < 5),
+
+    // Hapus tanggal yang masuk hari libur
+    WorkingDays = List.RemoveItems(Weekdays, Holidays),
+
+    // Hitung jumlah hari kerja
+    CountWorkingDays = List.Count(WorkingDays)
+in
+    CountWorkingDays
