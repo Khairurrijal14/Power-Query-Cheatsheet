@@ -1,0 +1,47 @@
+let
+    // Tahun yang diinginkan
+    Years = {2025..2030},
+
+    // Fungsi untuk memanggil API Nager.Date dan mengembalikan list record untuk 1 tahun
+    GetHolidaysForYear = (y as number) =>
+        try Json.Document(Web.Contents("https://date.nager.at/api/v3/PublicHolidays/" & Text.From(y) & "/ID"))
+        otherwise {},
+
+    // Panggil API untuk semua tahun, jadi akan menghasilkan list of lists
+    RawLists = List.Transform(Years, each GetHolidaysForYear(_)),
+
+    // Gabungkan semua list record menjadi satu list
+    AllRecords = List.Combine(RawLists),
+
+    // Convert list of records jadi table
+    HolidaysTable0 = Table.FromRecords(AllRecords),
+
+    // Pilih dan rename kolom yang relevan; field yang biasa dikembalikan API: date, localName, name, countryCode, fixed, global, counties, launchYear, types
+    PickCols = Table.SelectColumns(
+        HolidaysTable0,
+        List.Intersect({Table.ColumnNames(HolidaysTable0), {"date","localName","name","countryCode","fixed","global","types","launchYear"}})
+    ),
+
+    // Ubah tipe kolom date dari text ke date
+    ChangeType = Table.TransformColumns(PickCols, {{"date", each Date.FromText(_), type date}}),
+
+    // Tambahkan kolom tahun (ekstra) untuk kemudahan filter
+    AddYear = Table.AddColumn(ChangeType, "year", each Date.Year([date]), Int64.Type),
+
+    // Urutkan berdasarkan tanggal
+    Sorted = Table.Sort(AddYear, {{"date", Order.Ascending}}),
+
+    // Optional: rename kolom supaya lebih 'Indonesia-friendly'
+    FinalTable = Table.RenameColumns(Sorted,
+        {
+            {"date","holiday_date"},
+            {"localName","holiday_name_local"},
+            {"name","holiday_name_en"},
+            {"countryCode","country_code"},
+            {"fixed","is_fixed"},
+            {"global","is_global"},
+            {"types","types"},
+            {"launchYear","launch_year"}
+        }, MissingField.Ignore)
+in
+    FinalTable
